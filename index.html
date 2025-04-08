@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commission Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Basic styling for better readability */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb; /* Tailwind gray-50 */
+        }
+        /* Style the toggle switch */
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6; /* Tailwind blue-500 */
+        }
+        .toggle-checkbox:checked + .toggle-label::after {
+            transform: translateX(100%);
+            border-color: white;
+        }
+        .toggle-label::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 1.25rem; /* h-5 */
+            height: 1.25rem; /* w-5 */
+            background-color: white;
+            border-radius: 9999px; /* rounded-full */
+            transition: transform 0.2s ease-in-out;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow */
+        }
+        /* Ensure inputs have consistent height */
+        input[type="number"], select {
+            height: 2.5rem; /* Match button height (h-10) */
+            padding-left: 0.75rem;
+             padding-right: 0.75rem;
+        }
+         /* Add a bit more space between team member rows */
+        .team-member-row + .team-member-row {
+            margin-top: 1rem; /* mt-4 */
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-6 text-gray-800 text-center">Commission Calculator</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label for="userLevel" class="block text-sm font-medium text-gray-700 mb-1">Your Commission Level:</label>
+                <select id="userLevel" name="userLevel" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </select>
+            </div>
+
+            <div>
+                <label for="personalSales" class="block text-sm font-medium text-gray-700 mb-1">Number of Personal Sales:</label>
+                <input type="number" id="personalSales" name="personalSales" value="0" min="0" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        </div>
+
+        <div class="flex items-center justify-center mb-8">
+             <span class="mr-3 text-sm font-medium text-gray-900">Basic</span>
+             <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                <input type="checkbox" name="eliteToggle" id="eliteToggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer focus:outline-none"/>
+                <label for="eliteToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+            </div>
+            <span class="ml-3 text-sm font-medium text-gray-900">Elite</span>
+        </div>
+
+
+        <div class="mb-6 border-t border-gray-200 pt-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Team Overrides</h2>
+            <div id="teamMembersContainer" class="space-y-4">
+                <p id="noTeamMembersText" class="text-gray-500 italic">No team members added yet.</p>
+            </div>
+            <button id="addTeamMemberBtn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm">
+                Add Team Member
+            </button>
+        </div>
+
+        <div id="teamMemberTemplate" class="hidden team-member-row grid grid-cols-1 md:grid-cols-3 gap-4 items-center p-4 border border-gray-200 rounded-md bg-gray-50">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Team Member Level:</label>
+                <select name="teamMemberLevel" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Member's Sales:</label>
+                <input type="number" name="teamMemberSales" value="0" min="0" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="flex justify-end md:items-end h-full">
+                 <button name="removeTeamMemberBtn" class="mt-2 md:mt-0 px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 shadow-sm text-sm">
+                    Remove
+                </button>
+            </div>
+        </div>
+
+
+        <div class="mt-8 border-t border-gray-200 pt-6 bg-gray-100 p-6 rounded-lg">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Calculated Commission</h2>
+            <div class="space-y-2 text-lg">
+                <p>Personal Sales Commission: <span id="personalTotal" class="font-medium text-green-600">$0.00</span></p>
+                <p>Team Override Commission: <span id="overrideTotal" class="font-medium text-blue-600">$0.00</span></p>
+                <p class="border-t border-gray-300 pt-2 mt-2 font-bold text-gray-900">Grand Total: <span id="grandTotal" class="text-xl text-purple-700">$0.00</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Commission Data (Extracted from PDF) ---
+        const commissionData = {
+            // Personal Sales Advance [Elite, Basic]
+            personalSales: {
+                "Associate": [80.00, 80.00],
+                "Sr. Associate": [100.00, 100.00],
+                "Manager": [132.00, 132.00],
+                "Sr. Manager": [178.00, 178.00],
+                "Director": [246.00, 246.00],
+                "Sr. Director": [331.00, 302.67], // PDF: Elite, Basic
+                "Executive Director": [416.00, 359.34], // PDF: Elite, Basic
+                "Bronze ED": [434.00, 371.34], // PDF: Elite, Basic
+                "Silver ED": [452.00, 383.34], // PDF: Elite, Basic
+                "Gold ED": [470.00, 395.34], // PDF: Elite, Basic
+                "Platinum ED": [488.00, 407.34], // PDF: Elite, Basic
+                "Double Plat. ED": [492.00, 410.01], // PDF: Elite, Basic
+                "Triple Plat. ED": [496.00, 412.68], // PDF: Elite, Basic
+                "Platinum Elite": [500.00, 415.35], // PDF: Elite, Basic
+                "Diamond ED": [504.00, 418.02], // PDF: Elite, Basic
+            },
+            // Override Advances [Elite, Basic] - Key: UplineLevel -> DownlineLevel -> [Elite, Basic]
+            overrides: {
+                "Sr. Associate": { "Associate": [20.00, 20.00] },
+                "Manager": { "Associate": [52.00, 52.00], "Sr. Associate": [32.00, 32.00] },
+                "Sr. Manager": { "Associate": [98.00, 98.00], "Sr. Associate": [78.00, 78.00], "Manager": [46.00, 46.00] },
+                "Director": { "Associate": [166.00, 166.00], "Sr. Associate": [146.00, 146.00], "Manager": [114.00, 114.00], "Sr. Manager": [68.00, 68.00] },
+                "Sr. Director": { "Associate": [251.00, 222.67], "Sr. Associate": [231.00, 202.67], "Manager": [199.00, 170.67], "Sr. Manager": [153.00, 124.67], "Director": [85.00, 56.67] },
+                "Executive Director": { "Associate": [336.00, 279.34], "Sr. Associate": [316.00, 259.34], "Manager": [284.00, 227.34], "Sr. Manager": [238.00, 181.34], "Director": [170.00, 113.34], "Sr. Director": [85.00, 56.67] },
+                "Bronze ED": { "Associate": [354.00, 291.34], "Sr. Associate": [334.00, 271.34], "Manager": [302.00, 239.34], "Sr. Manager": [256.00, 193.34], "Director": [188.00, 125.34], "Sr. Director": [103.00, 68.67], "Executive Director": [18.00, 12.00] },
+                "Silver ED": { "Associate": [372.00, 303.34], "Sr. Associate": [352.00, 283.34], "Manager": [320.00, 251.34], "Sr. Manager": [274.00, 205.34], "Director": [206.00, 137.34], "Sr. Director": [121.00, 80.67], "Executive Director": [36.00, 24.00], "Bronze ED": [18.00, 12.00] },
+                "Gold ED": { "Associate": [390.00, 315.34], "Sr. Associate": [370.00, 295.34], "Manager": [338.00, 263.34], "Sr. Manager": [292.00, 217.34], "Director": [224.00, 149.34], "Sr. Director": [139.00, 92.67], "Executive Director": [54.00, 36.00], "Bronze ED": [36.00, 24.00], "Silver ED": [18.00, 12.00] },
+                "Platinum ED": { "Associate": [408.00, 327.34], "Sr. Associate": [388.00, 307.34], "Manager": [356.00, 275.34], "Sr. Manager": [310.00, 229.34], "Director": [242.00, 161.34], "Sr. Director": [157.00, 104.67], "Executive Director": [72.00, 48.00], "Bronze ED": [54.00, 36.00], "Silver ED": [36.00, 24.00], "Gold ED": [18.00, 12.00] },
+                "Double Plat. ED": { "Associate": [412.00, 330.01], "Sr. Associate": [392.00, 310.01], "Manager": [360.00, 278.01], "Sr. Manager": [314.00, 232.01], "Director": [246.00, 164.01], "Sr. Director": [161.00, 107.34], "Executive Director": [76.00, 50.67], "Bronze ED": [58.00, 38.67], "Silver ED": [40.00, 26.67], "Gold ED": [22.00, 14.67], "Platinum ED": [4.00, 2.67] },
+                "Triple Plat. ED": { "Associate": [416.00, 332.68], "Sr. Associate": [396.00, 312.68], "Manager": [364.00, 280.68], "Sr. Manager": [318.00, 234.68], "Director": [250.00, 166.68], "Sr. Director": [165.00, 110.01], "Executive Director": [80.00, 53.34], "Bronze ED": [62.00, 41.34], "Silver ED": [44.00, 29.34], "Gold ED": [26.00, 17.34], "Platinum ED": [8.00, 5.34], "Double Plat. ED": [4.00, 2.67] },
+                "Platinum Elite": { "Associate": [420.00, 335.35], "Sr. Associate": [400.00, 315.35], "Manager": [368.00, 283.35], "Sr. Manager": [322.00, 237.35], "Director": [254.00, 169.35], "Sr. Director": [169.00, 112.68], "Executive Director": [84.00, 56.01], "Bronze ED": [66.00, 44.01], "Silver ED": [48.00, 32.01], "Gold ED": [30.00, 20.01], "Platinum ED": [12.00, 8.01], "Double Plat. ED": [8.00, 5.34], "Triple Plat. ED": [4.00, 2.67] },
+                "Diamond ED": { "Associate": [424.00, 338.02], "Sr. Associate": [404.00, 318.02], "Manager": [372.00, 286.02], "Sr. Manager": [326.00, 240.02], "Director": [258.00, 172.02], "Sr. Director": [173.00, 115.35], "Executive Director": [88.00, 58.68], "Bronze ED": [70.00, 46.68], "Silver ED": [52.00, 34.68], "Gold ED": [34.00, 22.68], "Platinum ED": [16.00, 10.68], "Double Plat. ED": [12.00, 8.01], "Triple Plat. ED": [8.00, 5.34], "Platinum Elite": [4.00, 2.67] },
+            },
+            levels: [ // Order matters for dropdowns
+                "Associate", "Sr. Associate", "Manager", "Sr. Manager", "Director",
+                "Sr. Director", "Executive Director", "Bronze ED", "Silver ED", "Gold ED",
+                "Platinum ED", "Double Plat. ED", "Triple Plat. ED", "Platinum Elite", "Diamond ED"
+            ]
+        };
+
+        // --- DOM Elements ---
+        const userLevelSelect = document.getElementById('userLevel');
+        const personalSalesInput = document.getElementById('personalSales');
+        const eliteToggle = document.getElementById('eliteToggle');
+        const teamMembersContainer = document.getElementById('teamMembersContainer');
+        const addTeamMemberBtn = document.getElementById('addTeamMemberBtn');
+        const teamMemberTemplate = document.getElementById('teamMemberTemplate');
+        const personalTotalSpan = document.getElementById('personalTotal');
+        const overrideTotalSpan = document.getElementById('overrideTotal');
+        const grandTotalSpan = document.getElementById('grandTotal');
+        const noTeamMembersText = document.getElementById('noTeamMembersText');
+
+        // --- Functions ---
+
+        // Populate dropdowns with commission levels
+        function populateDropdowns() {
+            const selects = document.querySelectorAll('select[name="userLevel"], select[name="teamMemberLevel"]');
+            selects.forEach(select => {
+                // Clear existing options except for template's select
+                if (!select.closest('#teamMemberTemplate')) {
+                    select.innerHTML = '';
+                }
+                 commissionData.levels.forEach(level => {
+                    const option = document.createElement('option');
+                    option.value = level;
+                    option.textContent = level;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+        }
+
+        // Calculate the total commission
+        function calculateCommission() {
+            const userLevel = userLevelSelect.value;
+            const personalSales = parseInt(personalSalesInput.value) || 0;
+            const isElite = eliteToggle.checked;
+            const commissionIndex = isElite ? 0 : 1; // 0 for Elite, 1 for Basic
+
+            // Calculate Personal Commission
+            const personalRate = commissionData.personalSales[userLevel]?.[commissionIndex] || 0;
+            const personalTotal = personalRate * personalSales;
+
+            // Calculate Override Commission
+            let overrideTotal = 0;
+            const teamMemberRows = teamMembersContainer.querySelectorAll('.team-member-row');
+
+            teamMemberRows.forEach(row => {
+                const teamMemberLevelSelect = row.querySelector('select[name="teamMemberLevel"]');
+                const teamMemberSalesInput = row.querySelector('input[name="teamMemberSales"]');
+
+                if (teamMemberLevelSelect && teamMemberSalesInput) {
+                    const teamMemberLevel = teamMemberLevelSelect.value;
+                    const teamMemberSales = parseInt(teamMemberSalesInput.value) || 0;
+
+                    // Get override rate: commissionData.overrides[UPLINE_LEVEL][DOWNLINE_LEVEL][Elite/Basic Index]
+                    const overrideRate = commissionData.overrides[userLevel]?.[teamMemberLevel]?.[commissionIndex] || 0;
+                    overrideTotal += overrideRate * teamMemberSales;
+                }
+            });
+
+            // Update Display
+            personalTotalSpan.textContent = formatCurrency(personalTotal);
+            overrideTotalSpan.textContent = formatCurrency(overrideTotal);
+            grandTotalSpan.textContent = formatCurrency(personalTotal + overrideTotal);
+
+             // Show/hide the 'no team members' text
+             noTeamMembersText.style.display = teamMemberRows.length === 0 ? 'block' : 'none';
+        }
+
+        // Add a new team member row
+        function addTeamMemberRow() {
+            const newRow = teamMemberTemplate.cloneNode(true);
+            newRow.classList.remove('hidden');
+            newRow.removeAttribute('id');
+
+            // Populate the dropdown in the new row
+            const select = newRow.querySelector('select[name="teamMemberLevel"]');
+             select.innerHTML = ''; // Clear any default/template options if needed
+             commissionData.levels.forEach(level => {
+                const option = document.createElement('option');
+                option.value = level;
+                option.textContent = level;
+                select.appendChild(option);
+            });
+
+            // Add event listeners for the new row's inputs
+            const inputs = newRow.querySelectorAll('select, input');
+            inputs.forEach(input => input.addEventListener('change', calculateCommission));
+
+            // Add event listener for the remove button
+            const removeBtn = newRow.querySelector('button[name="removeTeamMemberBtn"]');
+            removeBtn.addEventListener('click', () => {
+                newRow.remove();
+                calculateCommission(); // Recalculate after removing
+            });
+
+            teamMembersContainer.appendChild(newRow);
+            calculateCommission(); // Recalculate after adding
+        }
+
+        // --- Event Listeners ---
+        userLevelSelect.addEventListener('change', calculateCommission);
+        personalSalesInput.addEventListener('input', calculateCommission);
+        eliteToggle.addEventListener('change', calculateCommission);
+        addTeamMemberBtn.addEventListener('click', addTeamMemberRow);
+
+        // --- Initial Setup ---
+        populateDropdowns();
+        calculateCommission(); // Initial calculation on load
+
+    </script>
+
+</body>
+</html>
