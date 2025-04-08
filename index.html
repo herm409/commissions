@@ -6,18 +6,19 @@
     <title>Commission Calculator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        // Configure Tailwind theme (optional, but good practice)
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'], // Set default font
                     },
                 }
             }
         }
     </script>
     <style>
-        /* Basic styling for better readability */
+        /* Basic styling for better readability and custom toggle */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f9fafb; /* Tailwind gray-50 */
@@ -42,11 +43,11 @@
             transition: transform 0.2s ease-in-out;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow */
         }
-        /* Ensure inputs have consistent height */
+        /* Ensure inputs and selects have consistent height and padding */
         input[type="number"], select {
             height: 2.5rem; /* Match button height (h-10) */
-            padding-left: 0.75rem;
-             padding-right: 0.75rem;
+            padding-left: 0.75rem; /* px-3 */
+            padding-right: 0.75rem; /* px-3 */
         }
          /* Add a bit more space between team member rows */
         .team-member-row + .team-member-row {
@@ -56,7 +57,10 @@
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
-        <h1 class="text-2xl font-bold mb-6 text-gray-800 text-center">Commission Calculator</h1>
+        <h1 class="text-2xl font-bold mb-2 text-gray-800 text-center">Commission Calculator</h1>
+        <p class="text-sm text-gray-600 text-center mb-6">
+            Disclaimer: Commissions shown are based on the $37.95 Preferred Legal Plan and the $34.95 IDShield Family 3 Bureau Plan.
+        </p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
@@ -80,12 +84,11 @@
             <span class="ml-3 text-sm font-medium text-gray-900">Elite</span>
         </div>
 
-
         <div class="mb-6 border-t border-gray-200 pt-6">
             <h2 class="text-xl font-semibold mb-4 text-gray-700">Team Overrides</h2>
             <div id="teamMembersContainer" class="space-y-4">
                 <p id="noTeamMembersText" class="text-gray-500 italic">No team members added yet.</p>
-            </div>
+                </div>
             <button id="addTeamMemberBtn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm">
                 Add Team Member
             </button>
@@ -108,7 +111,6 @@
             </div>
         </div>
 
-
         <div class="mt-8 border-t border-gray-200 pt-6 bg-gray-100 p-6 rounded-lg">
             <h2 class="text-xl font-semibold mb-4 text-gray-800">Calculated Commission</h2>
             <div class="space-y-2 text-lg">
@@ -121,26 +123,28 @@
 
     <script>
         // --- Commission Data (Extracted from PDF) ---
+        // Stores the commission rates for personal sales and overrides based on level and Elite/Basic status
         const commissionData = {
-            // Personal Sales Advance [Elite, Basic]
+            // Personal Sales Advance [Elite Rate, Basic Rate]
             personalSales: {
                 "Associate": [80.00, 80.00],
                 "Sr. Associate": [100.00, 100.00],
                 "Manager": [132.00, 132.00],
                 "Sr. Manager": [178.00, 178.00],
                 "Director": [246.00, 246.00],
-                "Sr. Director": [331.00, 302.67], // PDF: Elite, Basic
-                "Executive Director": [416.00, 359.34], // PDF: Elite, Basic
-                "Bronze ED": [434.00, 371.34], // PDF: Elite, Basic
-                "Silver ED": [452.00, 383.34], // PDF: Elite, Basic
-                "Gold ED": [470.00, 395.34], // PDF: Elite, Basic
-                "Platinum ED": [488.00, 407.34], // PDF: Elite, Basic
-                "Double Plat. ED": [492.00, 410.01], // PDF: Elite, Basic
-                "Triple Plat. ED": [496.00, 412.68], // PDF: Elite, Basic
-                "Platinum Elite": [500.00, 415.35], // PDF: Elite, Basic
-                "Diamond ED": [504.00, 418.02], // PDF: Elite, Basic
+                "Sr. Director": [331.00, 302.67],
+                "Executive Director": [416.00, 359.34],
+                "Bronze ED": [434.00, 371.34],
+                "Silver ED": [452.00, 383.34],
+                "Gold ED": [470.00, 395.34],
+                "Platinum ED": [488.00, 407.34],
+                "Double Plat. ED": [492.00, 410.01],
+                "Triple Plat. ED": [496.00, 412.68],
+                "Platinum Elite": [500.00, 415.35],
+                "Diamond ED": [504.00, 418.02],
             },
-            // Override Advances [Elite, Basic] - Key: UplineLevel -> DownlineLevel -> [Elite, Basic]
+            // Override Advances [Elite Rate, Basic Rate]
+            // Structure: UplineLevel -> DownlineLevel -> [Elite Rate, Basic Rate]
             overrides: {
                 "Sr. Associate": { "Associate": [20.00, 20.00] },
                 "Manager": { "Associate": [52.00, 52.00], "Sr. Associate": [32.00, 32.00] },
@@ -157,35 +161,42 @@
                 "Platinum Elite": { "Associate": [420.00, 335.35], "Sr. Associate": [400.00, 315.35], "Manager": [368.00, 283.35], "Sr. Manager": [322.00, 237.35], "Director": [254.00, 169.35], "Sr. Director": [169.00, 112.68], "Executive Director": [84.00, 56.01], "Bronze ED": [66.00, 44.01], "Silver ED": [48.00, 32.01], "Gold ED": [30.00, 20.01], "Platinum ED": [12.00, 8.01], "Double Plat. ED": [8.00, 5.34], "Triple Plat. ED": [4.00, 2.67] },
                 "Diamond ED": { "Associate": [424.00, 338.02], "Sr. Associate": [404.00, 318.02], "Manager": [372.00, 286.02], "Sr. Manager": [326.00, 240.02], "Director": [258.00, 172.02], "Sr. Director": [173.00, 115.35], "Executive Director": [88.00, 58.68], "Bronze ED": [70.00, 46.68], "Silver ED": [52.00, 34.68], "Gold ED": [34.00, 22.68], "Platinum ED": [16.00, 10.68], "Double Plat. ED": [12.00, 8.01], "Triple Plat. ED": [8.00, 5.34], "Platinum Elite": [4.00, 2.67] },
             },
-            levels: [ // Order matters for dropdowns
+            // List of levels in hierarchical order, used for populating dropdowns
+            levels: [
                 "Associate", "Sr. Associate", "Manager", "Sr. Manager", "Director",
                 "Sr. Director", "Executive Director", "Bronze ED", "Silver ED", "Gold ED",
                 "Platinum ED", "Double Plat. ED", "Triple Plat. ED", "Platinum Elite", "Diamond ED"
             ]
         };
 
-        // --- DOM Elements ---
+        // --- DOM Element References ---
+        // Get references to the interactive elements and display areas in the HTML
         const userLevelSelect = document.getElementById('userLevel');
         const personalSalesInput = document.getElementById('personalSales');
         const eliteToggle = document.getElementById('eliteToggle');
         const teamMembersContainer = document.getElementById('teamMembersContainer');
         const addTeamMemberBtn = document.getElementById('addTeamMemberBtn');
-        const teamMemberTemplate = document.getElementById('teamMemberTemplate');
+        const teamMemberTemplate = document.getElementById('teamMemberTemplate'); // The hidden template row
         const personalTotalSpan = document.getElementById('personalTotal');
         const overrideTotalSpan = document.getElementById('overrideTotal');
         const grandTotalSpan = document.getElementById('grandTotal');
-        const noTeamMembersText = document.getElementById('noTeamMembersText');
+        const noTeamMembersText = document.getElementById('noTeamMembersText'); // Text shown when container is empty
 
-        // --- Functions ---
+        // --- Core Functions ---
 
-        // Populate dropdowns with commission levels
+        /**
+         * Populates the user level and team member level dropdowns
+         * with the levels defined in commissionData.levels.
+         */
         function populateDropdowns() {
-            const selects = document.querySelectorAll('select[name="userLevel"], select[name="teamMemberLevel"]');
+            // Get all select elements that need populating (user level and template level)
+            const selects = document.querySelectorAll('select[name="userLevel"], #teamMemberTemplate select[name="teamMemberLevel"]');
             selects.forEach(select => {
-                // Clear existing options except for template's select
-                if (!select.closest('#teamMemberTemplate')) {
+                // Clear existing options only for the main user level select
+                if (select.id === 'userLevel') {
                     select.innerHTML = '';
                 }
+                 // Add each level as an option
                  commissionData.levels.forEach(level => {
                     const option = document.createElement('option');
                     option.value = level;
@@ -195,27 +206,38 @@
             });
         }
 
-        // Format currency
+        /**
+         * Formats a number as US currency (e.g., $1,234.56).
+         * @param {number} amount - The number to format.
+         * @returns {string} The formatted currency string.
+         */
         function formatCurrency(amount) {
             return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
         }
 
-        // Calculate the total commission
+        /**
+         * Calculates the total personal and override commissions based on current inputs.
+         * Updates the results display area.
+         */
         function calculateCommission() {
+            // Get current values from the form
             const userLevel = userLevelSelect.value;
-            const personalSales = parseInt(personalSalesInput.value) || 0;
+            const personalSales = parseInt(personalSalesInput.value) || 0; // Default to 0 if input is empty/invalid
             const isElite = eliteToggle.checked;
-            const commissionIndex = isElite ? 0 : 1; // 0 for Elite, 1 for Basic
+            const commissionIndex = isElite ? 0 : 1; // Index 0 for Elite rates, 1 for Basic rates
 
-            // Calculate Personal Commission
-            const personalRate = commissionData.personalSales[userLevel]?.[commissionIndex] || 0;
+            // --- Calculate Personal Commission ---
+            // Look up the personal sales rate based on user level and Elite/Basic status
+            const personalRate = commissionData.personalSales[userLevel]?.[commissionIndex] || 0; // Default to 0 if level/rate not found
             const personalTotal = personalRate * personalSales;
 
-            // Calculate Override Commission
+            // --- Calculate Override Commission ---
             let overrideTotal = 0;
-            const teamMemberRows = teamMembersContainer.querySelectorAll('.team-member-row');
+            // Get all currently displayed team member rows (excluding the template)
+            const teamMemberRows = teamMembersContainer.querySelectorAll('.team-member-row:not(#teamMemberTemplate)');
 
             teamMemberRows.forEach(row => {
+                // Get the level and sales count for this team member
                 const teamMemberLevelSelect = row.querySelector('select[name="teamMemberLevel"]');
                 const teamMemberSalesInput = row.querySelector('input[name="teamMemberSales"]');
 
@@ -223,30 +245,37 @@
                     const teamMemberLevel = teamMemberLevelSelect.value;
                     const teamMemberSales = parseInt(teamMemberSalesInput.value) || 0;
 
-                    // Get override rate: commissionData.overrides[UPLINE_LEVEL][DOWNLINE_LEVEL][Elite/Basic Index]
+                    // Look up the override rate: commissionData.overrides[USER_LEVEL][TEAM_MEMBER_LEVEL][Elite/Basic Index]
+                    // Defaults to 0 if the user level doesn't have overrides for the team member level,
+                    // or if the levels are invalid.
                     const overrideRate = commissionData.overrides[userLevel]?.[teamMemberLevel]?.[commissionIndex] || 0;
-                    overrideTotal += overrideRate * teamMemberSales;
+                    overrideTotal += overrideRate * teamMemberSales; // Add this member's override to the total
                 }
             });
 
-            // Update Display
+            // --- Update Display ---
+            // Format calculated totals as currency and display them
             personalTotalSpan.textContent = formatCurrency(personalTotal);
             overrideTotalSpan.textContent = formatCurrency(overrideTotal);
             grandTotalSpan.textContent = formatCurrency(personalTotal + overrideTotal);
 
-             // Show/hide the 'no team members' text
+             // Show or hide the 'No team members added yet' text based on whether rows exist
              noTeamMembersText.style.display = teamMemberRows.length === 0 ? 'block' : 'none';
         }
 
-        // Add a new team member row
+        /**
+         * Creates a new team member row by cloning the template,
+         * populates its dropdown, adds event listeners, and appends it to the container.
+         */
         function addTeamMemberRow() {
+            // Clone the hidden template node
             const newRow = teamMemberTemplate.cloneNode(true);
-            newRow.classList.remove('hidden');
-            newRow.removeAttribute('id');
+            newRow.classList.remove('hidden'); // Make the cloned row visible
+            newRow.removeAttribute('id'); // Remove the template ID to avoid duplicates
 
-            // Populate the dropdown in the new row
+            // Populate the level dropdown in the new row
             const select = newRow.querySelector('select[name="teamMemberLevel"]');
-             select.innerHTML = ''; // Clear any default/template options if needed
+             select.innerHTML = ''; // Clear any template placeholder options
              commissionData.levels.forEach(level => {
                 const option = document.createElement('option');
                 option.value = level;
@@ -254,32 +283,36 @@
                 select.appendChild(option);
             });
 
-            // Add event listeners for the new row's inputs
+            // Add event listeners to the inputs/select in the new row to trigger recalculation on change
             const inputs = newRow.querySelectorAll('select, input');
             inputs.forEach(input => input.addEventListener('change', calculateCommission));
 
-            // Add event listener for the remove button
+            // Add event listener to the 'Remove' button for this row
             const removeBtn = newRow.querySelector('button[name="removeTeamMemberBtn"]');
             removeBtn.addEventListener('click', () => {
-                newRow.remove();
-                calculateCommission(); // Recalculate after removing
+                newRow.remove(); // Remove the row from the DOM
+                calculateCommission(); // Recalculate commissions after removing the row
             });
 
+            // Append the fully configured new row to the container
             teamMembersContainer.appendChild(newRow);
-            calculateCommission(); // Recalculate after adding
+            calculateCommission(); // Recalculate commissions after adding the new row
         }
 
-        // --- Event Listeners ---
+        // --- Event Listeners Setup ---
+        // Attach the calculateCommission function to run whenever relevant inputs change
         userLevelSelect.addEventListener('change', calculateCommission);
-        personalSalesInput.addEventListener('input', calculateCommission);
+        personalSalesInput.addEventListener('input', calculateCommission); // 'input' for immediate update as user types
         eliteToggle.addEventListener('change', calculateCommission);
+        // Attach the addTeamMemberRow function to the 'Add Team Member' button click
         addTeamMemberBtn.addEventListener('click', addTeamMemberRow);
 
-        // --- Initial Setup ---
-        populateDropdowns();
-        calculateCommission(); // Initial calculation on load
+        // --- Initial Setup on Page Load ---
+        populateDropdowns(); // Fill the dropdowns initially
+        calculateCommission(); // Perform an initial calculation with default values
 
     </script>
 
 </body>
 </html>
+
